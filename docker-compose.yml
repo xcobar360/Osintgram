@@ -1,8 +1,8 @@
-version: '3.7'
+version: '3.4'
 
 services:
   osintgram:
-    container_name: osintgram
-    build: .
-    volumes:
-      - ./output:/home/osintgram/output
+    image: osintgram
+    build:
+      context: .
+      dockerfile: ./Dockerfile

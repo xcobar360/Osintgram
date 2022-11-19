@@ -1,26 +1,23 @@
-FROM python:3.9.2-alpine3.13 as build
-WORKDIR /wheels
-RUN apk add --no-cache \
-    ncurses-dev \
-    build-base
-COPY docker_reqs.txt /opt/osintgram/requirements.txt
-RUN pip3 wheel -r /opt/osintgram/requirements.txt
+# For more information, please refer to https://aka.ms/vscode-docker-python
+FROM python:3.8-slim
 
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
 
-FROM python:3.9.2-alpine3.13
-WORKDIR /home/osintgram
-RUN adduser -D osintgram
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
 
-COPY --from=build /wheels /wheels
-COPY --chown=osintgram:osintgram requirements.txt /home/osintgram/
-RUN pip3 install -r requirements.txt -f /wheels \
-  && rm -rf /wheels \
-  && rm -rf /root/.cache/pip/* \
-  && rm requirements.txt
+# Install pip requirements
+COPY requirements.txt .
+RUN python -m pip install -r requirements.txt
 
-COPY --chown=osintgram:osintgram src/ /home/osintgram/src
-COPY --chown=osintgram:osintgram main.py /home/osintgram/
-COPY --chown=osintgram:osintgram config/ /home/osintgram/config
-USER osintgram
+WORKDIR /app
+COPY . /app
 
-ENTRYPOINT ["python", "main.py"]
+# Creates a non-root user with an explicit UID and adds permission to access the /app folder
+# For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
+RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
+
+# During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
+CMD ["python", "main.py"]
